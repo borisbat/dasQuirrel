@@ -3,6 +3,7 @@
 #include "daScript/ast/ast.h"
 #include "daScript/ast/ast_interop.h"
 #include "daScript/ast/ast_typefactory_bind.h"
+#include "daScript/ast/ast_handle.h"
 
 #include "dasQUIRREL.h"
 
@@ -29,8 +30,8 @@ void sqdas_register(HSQUIRRELVM v) {
 }
 
 void Module_dasQUIRREL::initMain() {
-    addConstant<int64_t>(*this,"SQTrue",int64_t(1));
-    addConstant<int64_t>(*this,"SQFalse",int64_t(0));
+    addConstant<uint64_t>(*this,"SQTrue",1ul);
+    addConstant<uint64_t>(*this,"SQFalse",0ul);
 
     addExtern<DAS_BIND_FUN(sqdas_register)>(*this,lib,"sqdas_register",
         SideEffects::modifyExternal, "sqdas_register");
