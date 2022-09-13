@@ -1,0 +1,3 @@
+[submodule "quirrel"]
+	path = quirrel
+	url = git@github.com:GaijinEntertainment/quirrel.git
