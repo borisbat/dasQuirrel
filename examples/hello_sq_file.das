@@ -12,6 +12,8 @@ def call_foo( v:HSQUIRRELVM; n:int; f:float; s:string )
         sq_pushfloat(v,f)
         sq_pushstring(v,s,-1l)
         sq_call(v,4l,SQFalse,SQTrue)
+    else
+        panic("can't find foo\n")
     sq_settop(v,top)
 
 [export]
