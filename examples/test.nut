@@ -1,7 +1,4 @@
-#allow-func-decl-sugar
-
-function foo(i, f, s)
-{
-    print("Called foo(), i="+i+", f="+f+", s='"+s+"'\n");
+let function foo(i, f, s) {
+    println($"Called foo(), i={i}, f={f}, s='{s}'");
     print_args(i,f,s);
 }
