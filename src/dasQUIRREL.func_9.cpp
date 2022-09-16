@@ -40,7 +40,7 @@ void Module_dasQUIRREL::initFunctions_9() {
 	addExtern< SQBool (*)(SQRex *,SQInteger,SQRexMatch *) , sqstd_rex_getsubexp >(*this,lib,"sqstd_rex_getsubexp",SideEffects::worstDefault,"sqstd_rex_getsubexp")
 		->args({"exp","n","subexp"});
 // from D:\Work\daScript\Modules\dasQuirrel\libquirrel\include\sqstdstring.h:26:23
-	addExtern< SQRESULT (*)(SQVM *,SQInteger,long long *,char **) , sqstd_format >(*this,lib,"sqstd_format",SideEffects::worstDefault,"sqstd_format")
+	addExtern< SQRESULT (*)(SQVM *,SQInteger,SQInteger *,char **) , sqstd_format >(*this,lib,"sqstd_format",SideEffects::worstDefault,"sqstd_format")
 		->args({"v","nformatstringidx","outlen","output"});
 // from D:\Work\daScript\Modules\dasQuirrel\libquirrel\include\sqstdstring.h:30:23
 	addExtern< SQRESULT (*)(SQVM *) , sqstd_register_stringlib >(*this,lib,"sqstd_register_stringlib",SideEffects::worstDefault,"sqstd_register_stringlib")

@@ -22,7 +22,7 @@ void Module_dasQUIRREL::initFunctions_4() {
 	addExtern< SQRESULT (*)(SQVM *,SQInteger,tagSQFunctionInfo *) , sq_getfunctioninfo >(*this,lib,"sq_getfunctioninfo",SideEffects::worstDefault,"sq_getfunctioninfo")
 		->args({"v","level","fi"});
 // from D:\Work\daScript\Modules\dasQuirrel\libquirrel\include\squirrel.h:292:23
-	addExtern< SQRESULT (*)(SQVM *,SQInteger,long long *,long long *) , sq_getclosureinfo >(*this,lib,"sq_getclosureinfo",SideEffects::worstDefault,"sq_getclosureinfo")
+	addExtern< SQRESULT (*)(SQVM *,SQInteger,SQInteger *,SQInteger *) , sq_getclosureinfo >(*this,lib,"sq_getclosureinfo",SideEffects::worstDefault,"sq_getclosureinfo")
 		->args({"v","idx","nparams","nfreevars"});
 // from D:\Work\daScript\Modules\dasQuirrel\libquirrel\include\squirrel.h:293:23
 	addExtern< SQRESULT (*)(SQVM *,SQInteger) , sq_getclosurename >(*this,lib,"sq_getclosurename",SideEffects::worstDefault,"sq_getclosurename")
