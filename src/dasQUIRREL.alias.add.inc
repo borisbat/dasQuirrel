@@ -42,37 +42,37 @@ alias_HSQMEMBERHANDLE->alias = "HSQMEMBERHANDLE";
 addAlias(alias_HSQMEMBERHANDLE);
 
 // from D:\Work\daScript\Modules\dasQuirrel\libquirrel\include\squirrel.h:185:21
-auto alias_SQFUNCTION = typeFactory<long long (*)(SQVM *)>::make(lib);
+auto alias_SQFUNCTION = typeFactory<SQInteger (*)(SQVM *)>::make(lib);
 alias_SQFUNCTION->alias = "SQFUNCTION";
 addAlias(alias_SQFUNCTION);
 
 // from D:\Work\daScript\Modules\dasQuirrel\libquirrel\include\squirrel.h:186:21
-auto alias_SQRELEASEHOOK = typeFactory<long long (*)(void *, long long)>::make(lib);
+auto alias_SQRELEASEHOOK = typeFactory<SQInteger (*)(void *, SQInteger)>::make(lib);
 alias_SQRELEASEHOOK->alias = "SQRELEASEHOOK";
 addAlias(alias_SQRELEASEHOOK);
 
 // from D:\Work\daScript\Modules\dasQuirrel\libquirrel\include\squirrel.h:187:16
-auto alias_SQCOMPILERERROR = typeFactory<void (*)(SQVM *, const char *, const char *, long long, long long)>::make(lib);
+auto alias_SQCOMPILERERROR = typeFactory<void (*)(SQVM *, const char *, const char *, SQInteger, SQInteger)>::make(lib);
 alias_SQCOMPILERERROR->alias = "SQCOMPILERERROR";
 addAlias(alias_SQCOMPILERERROR);
 
 // from D:\Work\daScript\Modules\dasQuirrel\libquirrel\include\squirrel.h:189:16
-auto alias_SQDEBUGHOOK = typeFactory<void (*)(SQVM *, long long, const char *, long long, const char *)>::make(lib);
+auto alias_SQDEBUGHOOK = typeFactory<void (*)(SQVM *, SQInteger, const char *, SQInteger, const char *)>::make(lib);
 alias_SQDEBUGHOOK->alias = "SQDEBUGHOOK";
 addAlias(alias_SQDEBUGHOOK);
 
 // from D:\Work\daScript\Modules\dasQuirrel\libquirrel\include\squirrel.h:190:21
-auto alias_SQWRITEFUNC = typeFactory<long long (*)(void *, void *, long long)>::make(lib);
+auto alias_SQWRITEFUNC = typeFactory<SQInteger (*)(void *, void *, SQInteger)>::make(lib);
 alias_SQWRITEFUNC->alias = "SQWRITEFUNC";
 addAlias(alias_SQWRITEFUNC);
 
 // from D:\Work\daScript\Modules\dasQuirrel\libquirrel\include\squirrel.h:191:21
-auto alias_SQREADFUNC = typeFactory<long long (*)(void *, void *, long long)>::make(lib);
+auto alias_SQREADFUNC = typeFactory<SQInteger (*)(void *, void *, SQInteger)>::make(lib);
 alias_SQREADFUNC->alias = "SQREADFUNC";
 addAlias(alias_SQREADFUNC);
 
 // from D:\Work\daScript\Modules\dasQuirrel\libquirrel\include\squirrel.h:193:21
-auto alias_SQLEXREADFUNC = typeFactory<long long (*)(void *)>::make(lib);
+auto alias_SQLEXREADFUNC = typeFactory<SQInteger (*)(void *)>::make(lib);
 alias_SQLEXREADFUNC->alias = "SQLEXREADFUNC";
 addAlias(alias_SQLEXREADFUNC);
 

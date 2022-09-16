@@ -43,22 +43,22 @@ void Module_dasQUIRREL::initFunctions_3() {
 	addExtern< SQRESULT (*)(SQVM *,SQInteger) , sq_tostring >(*this,lib,"sq_tostring",SideEffects::worstDefault,"sq_tostring")
 		->args({"v","idx"});
 // from D:\Work\daScript\Modules\dasQuirrel\libquirrel\include\squirrel.h:277:19
-	addExtern< void (*)(SQVM *,SQInteger,unsigned long long *) , sq_tobool >(*this,lib,"sq_tobool",SideEffects::worstDefault,"sq_tobool")
+	addExtern< void (*)(SQVM *,SQInteger,SQBool *) , sq_tobool >(*this,lib,"sq_tobool",SideEffects::worstDefault,"sq_tobool")
 		->args({"v","idx","b"});
 // from D:\Work\daScript\Modules\dasQuirrel\libquirrel\include\squirrel.h:278:23
-	addExtern< SQRESULT (*)(SQVM *,SQInteger,const char **,long long *) , sq_getstringandsize >(*this,lib,"sq_getstringandsize",SideEffects::worstDefault,"sq_getstringandsize")
+	addExtern< SQRESULT (*)(SQVM *,SQInteger,const char **,SQInteger *) , sq_getstringandsize >(*this,lib,"sq_getstringandsize",SideEffects::worstDefault,"sq_getstringandsize")
 		->args({"v","idx","c","size"});
 // from D:\Work\daScript\Modules\dasQuirrel\libquirrel\include\squirrel.h:279:23
 	addExtern< SQRESULT (*)(SQVM *,SQInteger,const char **) , sq_getstring >(*this,lib,"sq_getstring",SideEffects::worstDefault,"sq_getstring")
 		->args({"v","idx","c"});
 // from D:\Work\daScript\Modules\dasQuirrel\libquirrel\include\squirrel.h:280:23
-	addExtern< SQRESULT (*)(SQVM *,SQInteger,long long *) , sq_getinteger >(*this,lib,"sq_getinteger",SideEffects::worstDefault,"sq_getinteger")
+	addExtern< SQRESULT (*)(SQVM *,SQInteger,SQInteger *) , sq_getinteger >(*this,lib,"sq_getinteger",SideEffects::worstDefault,"sq_getinteger")
 		->args({"v","idx","i"});
 // from D:\Work\daScript\Modules\dasQuirrel\libquirrel\include\squirrel.h:281:23
 	addExtern< SQRESULT (*)(SQVM *,SQInteger,float *) , sq_getfloat >(*this,lib,"sq_getfloat",SideEffects::worstDefault,"sq_getfloat")
 		->args({"v","idx","f"});
 // from D:\Work\daScript\Modules\dasQuirrel\libquirrel\include\squirrel.h:282:23
-	addExtern< SQRESULT (*)(SQVM *,SQInteger,unsigned long long *) , sq_getbool >(*this,lib,"sq_getbool",SideEffects::worstDefault,"sq_getbool")
+	addExtern< SQRESULT (*)(SQVM *,SQInteger, SQBool *) , sq_getbool >(*this,lib,"sq_getbool",SideEffects::worstDefault,"sq_getbool")
 		->args({"v","idx","b"});
 // from D:\Work\daScript\Modules\dasQuirrel\libquirrel\include\squirrel.h:283:23
 	addExtern< SQRESULT (*)(SQVM *,SQInteger,SQVM **) , sq_getthread >(*this,lib,"sq_getthread",SideEffects::worstDefault,"sq_getthread")

@@ -15,27 +15,28 @@ namespace das {
 
 static SQInteger squirrel_print_args(HSQUIRRELVM v) {
     SQInteger nargs = sq_gettop(v); //number of arguments
+    LOG tout(LogLevel::info);
     for(SQInteger n=1;n<=nargs;n++) {
-        printf("arg %d is ",int(n));
+        tout << "arg " << int(n) << " is ";
         switch(sq_gettype(v,n)) {
-            case OT_NULL:           printf("null");break;
-            case OT_INTEGER:        printf("integer");break;
-            case OT_FLOAT:          printf("float");break;
-            case OT_STRING:         printf("string");break;
-            case OT_TABLE:          printf("table");break;
-            case OT_ARRAY:          printf("array");break;
-            case OT_USERDATA:       printf("userdata");break;
-            case OT_CLOSURE:        printf("closure(function)");break;
-            case OT_NATIVECLOSURE:  printf("native closure(C function)");break;
-            case OT_GENERATOR:      printf("generator");break;
-            case OT_USERPOINTER:    printf("userpointer");break;
-            case OT_CLASS:          printf("class");break;
-            case OT_INSTANCE:       printf("instance");break;
-            case OT_WEAKREF:        printf("weak reference");break;
+            case OT_NULL:           tout << "null";break;
+            case OT_INTEGER:        tout << "integer";break;
+            case OT_FLOAT:          tout << "float";break;
+            case OT_STRING:         tout << "string";break;
+            case OT_TABLE:          tout << "table";break;
+            case OT_ARRAY:          tout << "array";break;
+            case OT_USERDATA:       tout << "userdata";break;
+            case OT_CLOSURE:        tout << "closure(function))";break;
+            case OT_NATIVECLOSURE:  tout << "native closure(C function)";break;
+            case OT_GENERATOR:      tout << "generator";break;
+            case OT_USERPOINTER:    tout << "userpointer";break;
+            case OT_CLASS:          tout << "class";break;
+            case OT_INSTANCE:       tout << "instance";break;
+            case OT_WEAKREF:        tout << "weak reference";break;
             default:                return sq_throwerror(v,"invalid param"); //throws an exception
         }
     }
-    printf("\n");
+    tout << "\n";
     sq_pushinteger(v,nargs); //push the number of arguments as return value
     return 1; //1 because 1 value is returned
 }
@@ -51,17 +52,31 @@ static SQInteger squirrel_register_global_func(HSQUIRRELVM v,SQFUNCTION f,const 
 
 static void squirrel_print_function(HSQUIRRELVM, const SQChar *format, ...) {
     va_list args;
+    char buffer[1024];
     va_start(args, format);
-    vfprintf(stdout, format, args);
+    vsprintf(buffer, format, args);
     va_end(args);
+    LOG tout(LogLevel::info);
+    tout.write(buffer);
+}
+
+static void squirrel_error_function(HSQUIRRELVM, const SQChar *format, ...) {
+    va_list args;
+    char buffer[1024];
+    va_start(args, format);
+    vsprintf(buffer, format, args);
+    va_end(args);
+    LOG tout(LogLevel::error);
+    tout.write(buffer);
 }
 
 static void squirrel_compiler_error_function(HSQUIRRELVM,const SQChar * desc,const SQChar * source,SQInteger line,SQInteger column) {
-    printf("error: %s at %s(%d,%d)\n", desc, source, int(line), int(column));
+    LOG tout(LogLevel::error);
+    tout << "error: " << desc << " at " << source << "(" << int(line) << "," << int(column) << ")";
 }
 
 void sqdas_register(HSQUIRRELVM v) {
-    sq_setprintfunc(v, squirrel_print_function, squirrel_print_function);
+    sq_setprintfunc(v, squirrel_print_function, squirrel_error_function);
     sq_setcompilererrorhandler(v, squirrel_compiler_error_function);
     squirrel_register_global_func(v, squirrel_print_args, "print_args");
 }
