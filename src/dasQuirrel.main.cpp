@@ -87,10 +87,23 @@ void Module_dasQUIRREL::initMain() {
 
     addExtern<DAS_BIND_FUN(sqdas_register)>(*this,lib,"sqdas_register",
         SideEffects::modifyExternal, "sqdas_register");
+
+    // fixup module functions, so that there is a string cast
+    for ( auto & pfn : this->functions.each() ) {
+        bool anyString = false;
+        for ( auto & arg : pfn->arguments ) {
+            if ( arg->type->isString() && !arg->type->ref ) {
+                anyString = true;
+            }
+        }
+        if ( anyString ) {
+            pfn->needStringCast = true;
+        }
+    }
 }
 
 ModuleAotType Module_dasQUIRREL::aotRequire ( TextWriter & tw ) const {
-    tw << "#include \"../modules/dasQuirrel/src/cb_dasQuirrel.h\"\n";
+    tw << "#include \"../modules/dasQuirrel/src/aot_quirrel.h\"\n";
     return ModuleAotType::cpp;
 }
 
