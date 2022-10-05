@@ -242,10 +242,9 @@ class QuirrelBindAnnotation : AstFunctionAnnotation
             errors := "function '{fn.name}(...) : {describe(fn.result)}' already has return result, 'raw_return' annotation is redundant"
             return false
 
-        // TODO:
-        // if fn._module.isModule
-        //     errors := "quirrel_bind shouldn't be placed in the module. Please move the function to a file without module directive";
-        //     return false
+        if fn._module.moduleFlags.isModule
+            errors := "quirrel_bind shouldn't be placed in the module. Please move the function to a file without module directive";
+            return false
 
         let bindName = nameArg is nothing ? string(fn.name) : nameArg as tString
         let wrapperName = "wrapper_{bindName}"
