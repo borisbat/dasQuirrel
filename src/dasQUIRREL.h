@@ -9,6 +9,7 @@ public:
 protected:
 virtual bool initDependencies() override;
 	void initMain ();
+	void initBind ();
 	virtual ModuleAotType aotRequire ( TextWriter & tw ) const override;
 	#include "dasQUIRREL.func.decl.inc"
 public:
