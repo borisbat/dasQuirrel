@@ -28,6 +28,7 @@ bool Module_dasQUIRREL::initDependencies() {
 	#include "dasQUIRREL.alias.add.inc"
 	#include "dasQUIRREL.func.reg.inc"
 	initMain();
+	initBind();
 	return true;
 }
 }

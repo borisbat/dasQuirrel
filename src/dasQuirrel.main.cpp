@@ -58,6 +58,7 @@ static void squirrel_print_function(HSQUIRRELVM, const SQChar *format, ...) {
     va_end(args);
     LOG tout(LogLevel::info);
     tout.write(buffer);
+    tout << "\n";
 }
 
 static void squirrel_error_function(HSQUIRRELVM, const SQChar *format, ...) {
@@ -68,11 +69,12 @@ static void squirrel_error_function(HSQUIRRELVM, const SQChar *format, ...) {
     va_end(args);
     LOG tout(LogLevel::error);
     tout.write(buffer);
+    tout << "\n";
 }
 
 static void squirrel_compiler_error_function(HSQUIRRELVM,const SQChar * desc,const SQChar * source,SQInteger line,SQInteger column) {
     LOG tout(LogLevel::error);
-    tout << "error: " << desc << " at " << source << "(" << int(line) << "," << int(column) << ")";
+    tout << "error: " << desc << " at " << source << "(" << int(line) << "," << int(column) << ")\n";
 }
 
 void sqdas_register(HSQUIRRELVM v) {
