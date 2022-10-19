@@ -15,6 +15,24 @@ require daslib/strings_boost
 require quirrel public
 
 
+def public popValue(var vm : SQVM?; idx, nargs : int64; cb : block<(res : auto(T)) : void>)
+    if idx < nargs
+        return popValue(vm, idx, cb)
+    cb |> invoke(null)
+    return true
+
+
+def public popValue(var vm : SQVM?; idx : int64; cb : block<(res : auto(T)?) : void>)
+    let itemType = sq_gettype(vm, idx)
+    if itemType != tagSQObjectType OT_NULL
+        return popValue(vm, idx) <| $(res2 : T)
+            cb |> invoke(unsafe(reinterpret<T? const> unsafe(addr(res2))))
+    else
+        cb |> invoke(null)
+        return true
+    return false
+
+
 def public popIntValue(var vm : SQVM?; idx : int64; cb : block<(res : auto(T)) : void>)
     var res = 0l
     if sq_getinteger(vm, idx, unsafe(addr(res))) >= 0l
@@ -56,7 +74,12 @@ def public popValue(var vm : SQVM?; idx : int64; cb : block<(res : float) : void
 
 def public popValue(var vm : SQVM?; idx : int64; cb : block<(res : string) : void>)
     var res : string
-    if sq_getstring(vm, idx, unsafe(addr(res))) >= 0l
+    let itemType = sq_gettype(vm, idx)
+    if itemType == tagSQObjectType OT_STRING
+        if sq_getstring(vm, idx, unsafe(addr(res))) >= 0l
+            cb |> invoke(unsafe(reinterpret<string> res))
+            return true
+    elif itemType == tagSQObjectType OT_NULL
         cb |> invoke(unsafe(reinterpret<string> res))
         return true
     return false
@@ -149,7 +172,7 @@ def public paramcheck(typ)
                 || typ.baseType == Type tVariant || typ.baseType == Type tBitfield)
     return "n" if typ.baseType == Type tFloat
     return "b" if typ.baseType == Type tBool
-    return "s" if typ.baseType == Type tString
+    return "s|o" if typ.baseType == Type tString
     return "a" if typ.baseType == Type tArray
     return "t" if typ.baseType == Type tTable
     return "x" if typ.baseType == Type tHandle && typ.annotation.isRefType
@@ -157,7 +180,10 @@ def public paramcheck(typ)
     return "." // any type
 
 [macro_function]
-def read_arg(var arg : smart_ptr<ast::Variable>&; vmIdx : int64; argName : string; var errors : das_string; var funcBody : array<ExpressionPtr>; var paramsCheck : array<string>) : array<ExpressionPtr>
+def read_arg(var arg : smart_ptr<ast::Variable>&; vmIdx : int64; argName : string; optional_args: bool; var errors : das_string;
+             var funcBody : array<ExpressionPtr>; var paramsCheck : array<string>; var nullable_arg, vm_arg : bool&) : array<ExpressionPtr>
+    nullable_arg = false
+    vm_arg = false
     var definedParamCheck = ""
     for ann in arg.annotation
         if ann.name == "param_check"
@@ -176,22 +202,34 @@ def read_arg(var arg : smart_ptr<ast::Variable>&; vmIdx : int64; argName : strin
                 paramsCheck |> push("{ann.sValue}", 0)
             return <- funcBody
 
-    if arg._type.baseType == Type tPointer && arg._type.firstType.annotation.name == "SQVM"
-        var expr <- qmacro_expr(${var $i(argName) = _vm_;})
-        funcBody |> emplace(expr, 0)
-        return <- funcBody
+    if arg._type.baseType == Type tPointer
+        if arg._type.firstType.annotation != null && arg._type.firstType.annotation.name == "SQVM"
+            vm_arg = true
+            var expr <- qmacro_expr(${var $i(argName) = _vm_;})
+            funcBody |> emplace(expr, 0)
+            return <- funcBody
+        else
+            nullable_arg = true
 
     if arg._type.baseType == Type tHandle && is_temp_type(arg._type,true) && !(arg._type.flags.temporary || arg._type.flags._implicit)
         errors := "{errors}\nargument {arg.name} needs to be temporary or implicit)"
         return <- funcBody
 
     var res : array<ExpressionPtr>
-    var reader <- qmacro_block <|
-        if !(_::popValue(_vm_, $v(vmIdx)) <| $($i(argName) : $t(arg._type)&) { $b(funcBody); })
-            let valueType = sq_gettype(_vm_, $v(vmIdx))
-            sq_throwerror(_vm_, "Unable to read argument '{$v(argName)}'. Expected '{$v(describe(arg._type))}, got {valueType}'")
-            _runtime_error_ = true
-    res |> emplace(reader)
+    if nullable_arg && optional_args
+        var reader <- qmacro_block <|
+            if !(_::popValue(_vm_, $v(vmIdx), _nargs_) <| $($i(argName) : $t(arg._type)&) { $b(funcBody); })
+                let valueType = sq_gettype(_vm_, $v(vmIdx))
+                sq_throwerror(_vm_, "Unable to read argument '{$v(argName)}'. Expected '{$v(describe(arg._type))}, got {valueType}'")
+                _runtime_error_ = true
+        res |> emplace(reader)
+    else
+        var reader <- qmacro_block <|
+            if !(_::popValue(_vm_, $v(vmIdx)) <| $($i(argName) : $t(arg._type)&) { $b(funcBody); })
+                let valueType = sq_gettype(_vm_, $v(vmIdx))
+                sq_throwerror(_vm_, "Unable to read argument '{$v(argName)}'. Expected '{$v(describe(arg._type))}, got {valueType}'")
+                _runtime_error_ = true
+        res |> emplace(reader)
     paramsCheck |> push(empty(definedParamCheck) ? paramcheck(arg._type) : definedParamCheck, 0)
     return <- res
 
@@ -273,10 +311,17 @@ class QuirrelBindAnnotation : AstFunctionAnnotation
 
         var argIdx = length(fn.arguments) - 1
         var paramsCheck : array<string>; defer_delete(paramsCheck)
+        var optionalArgs = true
+        var optionalArgsNum = 0
         while argIdx >= 0
             assume arg = fn.arguments[argIdx]
             let argName = "{arg.name}"
-            funcBody <- read_arg(arg, int64(argIdx) + INITIAL_IDX_OFFSET, argName, errors, funcBody, paramsCheck)
+            var nullableArg = false
+            var vmArg = false
+            funcBody <- read_arg(arg, int64(argIdx) + INITIAL_IDX_OFFSET, argName, optionalArgs, errors, funcBody, paramsCheck, nullableArg, vmArg)
+            if !vmArg
+                optionalArgs &&= nullableArg
+                optionalArgsNum += optionalArgs ? 1 : 0
             argIdx -= 1
         paramsCheck |> push(".", 0)
 
@@ -289,6 +334,9 @@ class QuirrelBindAnnotation : AstFunctionAnnotation
                 ann.arguments |> add_annotation_argument("binded", true)
 
         if length(fn.arguments) > 0
+            if optionalArgsNum > 0
+                var nArgsExpr <- qmacro_expr(${ var _nargs_ = sq_gettop(_vm_); })
+                funcBody |> emplace(nArgsExpr, 0)
             var errorsExpr <- qmacro_expr(${ var _runtime_error_ = false; })
             funcBody |> emplace(errorsExpr, 0)
             funcBody |> emplace_new <| qmacro_expr(${ return _runtime_error_ ? -1l : $v(voidResult && !isManualReturn ? 0l : 1l); })
@@ -302,7 +350,7 @@ class QuirrelBindAnnotation : AstFunctionAnnotation
         bindFn |> append_annotation("quirrel_boost", "quirrel_wrapper", [{auto
             [[auto "name", [[RttiValue tString="{bindName}"]] ]];
             [[auto "paramsCheck", [[RttiValue tString="{join(paramsCheck, "")}"]] ]];
-            [[auto "params", [[RttiValue tInt=length(paramsCheck)]] ]]
+            [[auto "params", [[RttiValue tInt=optionalArgsNum == 0 ? length(paramsCheck) : -length(paramsCheck)+optionalArgsNum]] ]]
         }])
         fn._module |> add_function(bindFn)
         if !(is_in_aot() || is_in_completion())
