@@ -13,17 +13,19 @@
 namespace das {
 
 struct SqFuncDesc {
-    string name;
+    uint64_t fnHash;
     string paramsCheck;
     int paramsNum;
 };
 
 static das_hash_map<uint64_t, Context*> bindedFunctions;
-static das_hash_map<uint64_t, SqFuncDesc> bindedFunctionNames;
+static das_hash_map<uint64_t, string> bindedFunctionNames;
+static das_hash_map</* module name */string, vector<SqFuncDesc>> bindedFunctionDescs;
 
-void sqdas_bind_func( Context &ctx, uint64_t fnHash, const char * name, int paramsNum, const char * paramsCheck) {
+void sqdas_bind_func( Context &ctx, uint64_t fnHash, const char * name, const char * moduleName, int paramsNum, const char * paramsCheck) {
     bindedFunctions[fnHash] = &ctx;
-    bindedFunctionNames[fnHash] = { name, paramsCheck, paramsNum};
+    bindedFunctionNames[fnHash] = name;
+    bindedFunctionDescs[moduleName].emplace_back(SqFuncDesc{ fnHash, paramsCheck, paramsNum });
 }
 
 SQInteger call_binded_func(HSQUIRRELVM vm) {
@@ -37,14 +39,14 @@ SQInteger call_binded_func(HSQUIRRELVM vm) {
     if (!ctx) {
         return sq_throwerror(vm, string(string::CtorSprintf{},
                     "Unable to call function '%s', context is null. Unloaded function or compilation error",
-                    bindedFunctionNames[funcHash].name.c_str()).c_str());
+                    bindedFunctionNames[funcHash].c_str()).c_str());
     }
 
     SimFunction *simFn = ctx->fnByMangledName(funcHash);
     if (!simFn) {
         return sq_throwerror(vm, string(string::CtorSprintf{},
                     "Internal error: unable to find function '%s'. Maybe compilation error",
-                    bindedFunctionNames[funcHash].name.c_str()).c_str());
+                    bindedFunctionNames[funcHash].c_str()).c_str());
     }
 
     vec4f args[1];
@@ -67,18 +69,23 @@ SQInteger call_binded_func(HSQUIRRELVM vm) {
     return cast<SQInteger>::to(res);
 }
 
-void register_bound_funcs(HSQUIRRELVM vm, HSQOBJECT tab) {
-    assert(sq_istable(tab));
-    sq_pushobject(vm, tab);
-    for (auto &pair : bindedFunctionNames) {
-        sq_pushstring(vm, pair.second.name.c_str(), -1);
-        sq_pushinteger(vm, pair.first); // push func hash
-        sq_newclosure(vm, call_binded_func, 1);
-        sq_setparamscheck(vm, pair.second.paramsNum, pair.second.paramsCheck.c_str());
-        sq_setnativeclosurename(vm, -1, pair.second.name.c_str());
-        sq_newslot(vm, -3, SQFalse);
+void register_bound_funcs(HSQUIRRELVM vm, function<void(const char *module_name, HSQOBJECT tab)> cb) {
+    for (auto &modules : bindedFunctionDescs) {
+        HSQOBJECT obj;
+        sq_newtable(vm);
+        sq_getstackobj(vm,-1,&obj);
+        for (auto &pair : modules.second) {
+            string funcName = bindedFunctionNames[pair.fnHash];
+            sq_pushstring(vm, funcName.c_str(), -1);
+            sq_pushinteger(vm, pair.fnHash); // push func hash
+            sq_newclosure(vm, call_binded_func, 1);
+            sq_setparamscheck(vm, pair.paramsNum, pair.paramsCheck.c_str());
+            sq_setnativeclosurename(vm, -1, funcName.c_str());
+            sq_newslot(vm, -3, SQFalse);
+        }
+        cb(modules.first.c_str(), obj);
+        sq_pop(vm, 1);
     }
-    sq_pop(vm, 1);
 }
 
 void Module_dasQUIRREL::initBind() {
@@ -91,12 +98,11 @@ void Module_dasQUIRREL::initBind() {
           if (it.second == ctx) {
             it.second = nullptr;
             LOG tout(LogLevel::info);
-            tout << "unlink quirrel binding: " << bindedFunctionNames[it.first].name << "\n";
+            tout << "unlink quirrel binding: " << bindedFunctionNames[it.first] << "\n";
           }
         }
     });
 }
 
 }
-
 

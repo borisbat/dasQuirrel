@@ -242,11 +242,12 @@ class QuirrelCallAnnotation : AstFunctionAnnotation
         for ann in func.annotations
             if ann.annotation.name == "quirrel_wrapper"
                 let nameArg = find_arg("name", ann.arguments)
+                let moduleArg = find_arg("module_name", ann.arguments)
                 let paramsCheckArg = find_arg("paramsCheck", ann.arguments)
                 let paramsArg = find_arg("params", ann.arguments)
                 let mn = get_mangled_name(func)
                 let mnh = hash(mn)
-                sqdas_bind_func(*get_ptr(ctx), mnh, "{nameArg}", paramsArg as tInt, "{paramsCheckArg}")
+                sqdas_bind_func(*get_ptr(ctx), mnh, "{nameArg}", "{moduleArg}", paramsArg as tInt, "{paramsCheckArg}")
                 print("{ctx.name}: link quirrel binding '{nameArg}' with {paramsArg as tInt} params ({paramsCheckArg}) hash: {mnh}\n")
 
 
@@ -267,6 +268,7 @@ class QuirrelBindAnnotation : AstFunctionAnnotation
         if !(nameArg is nothing) && !(nameArg is tString)
             errors := "annotation argument 'name' expecting string [quirrel_bind(name=<bind name>)]"
             return false
+        let moduleArg = find_arg("module_name", args)
 
         let voidResult = fn.result.baseType == Type tVoid
 
@@ -349,6 +351,7 @@ class QuirrelBindAnnotation : AstFunctionAnnotation
         bindFn.flags |= FunctionFlags exports | FunctionFlags privateFunction
         bindFn |> append_annotation("quirrel_boost", "quirrel_wrapper", [{auto
             [[auto "name", [[RttiValue tString="{bindName}"]] ]];
+            [[auto "module_name", [[RttiValue tString=moduleArg ?as tString ?? "dasbind" ]] ]];
             [[auto "paramsCheck", [[RttiValue tString="{join(paramsCheck, "")}"]] ]];
             [[auto "params", [[RttiValue tInt=optionalArgsNum == 0 ? length(paramsCheck) : -length(paramsCheck)+optionalArgsNum]] ]]
         }])
