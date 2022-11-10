@@ -18,11 +18,13 @@ struct SqFuncDesc {
     int paramsNum;
 };
 
+static mutex lock;
 static das_hash_map<uint64_t, Context*> bindedFunctions;
 static das_hash_map<uint64_t, string> bindedFunctionNames;
 static das_hash_map</* module name */string, vector<SqFuncDesc>> bindedFunctionDescs;
 
 void sqdas_bind_func( Context &ctx, uint64_t fnHash, const char * name, const char * moduleName, int paramsNum, const char * paramsCheck) {
+    lock_guard<mutex> guard(lock);
     bindedFunctions[fnHash] = &ctx;
     bindedFunctionNames[fnHash] = name;
     bindedFunctionDescs[moduleName].emplace_back(SqFuncDesc{ fnHash, paramsCheck, paramsNum });
@@ -49,6 +51,7 @@ SQInteger call_binded_func(HSQUIRRELVM vm) {
                     bindedFunctionNames[funcHash].c_str()).c_str());
     }
 
+    lock_guard<mutex> guard(lock);
     vec4f args[1];
     args[0] = cast<HSQUIRRELVM>::from(vm);
     vec4f res{};
@@ -70,6 +73,7 @@ SQInteger call_binded_func(HSQUIRRELVM vm) {
 }
 
 void register_bound_funcs(HSQUIRRELVM vm, function<void(const char *module_name, HSQOBJECT tab)> cb) {
+    lock_guard<mutex> guard(lock);
     for (auto &modules : bindedFunctionDescs) {
         HSQOBJECT obj;
         sq_newtable(vm);
@@ -94,6 +98,7 @@ void Module_dasQUIRREL::initBind() {
         SideEffects::modifyExternal, "sqdas_bind_func");
 
     das::onDestroyCppDebugAgent(name.c_str(), [](das::Context *ctx) {
+        lock_guard<mutex> guard(lock);
         for (auto &it : bindedFunctions) {
           if (it.second == ctx) {
             it.second = nullptr;
@@ -105,4 +110,3 @@ void Module_dasQUIRREL::initBind() {
 }
 
 }
-
