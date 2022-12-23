@@ -243,7 +243,7 @@ class QuirrelCallAnnotation : AstFunctionAnnotation
             if ann.annotation.name == "quirrel_wrapper"
                 let nameArg = find_arg("name", ann.arguments)
                 let moduleArg = find_arg("module_name", ann.arguments)
-                let paramsCheckArg = find_arg("paramsCheck", ann.arguments)
+                let paramsCheckArg = find_arg("params_check", ann.arguments)
                 let paramsArg = find_arg("params", ann.arguments)
                 let mn = get_mangled_name(func)
                 let mnh = hash(mn)
@@ -268,7 +268,11 @@ class QuirrelBindAnnotation : AstFunctionAnnotation
         if !(nameArg is nothing) && !(nameArg is tString)
             errors := "annotation argument 'name' expecting string [quirrel_bind(name=<bind name>)]"
             return false
+
         let moduleArg = find_arg("module_name", args)
+        if !(moduleArg is nothing) && !(moduleArg is tString)
+            errors := "annotation argument 'module_name' expecting string [quirrel_bind(module_name=<mod name>)]"
+            return false
 
         let voidResult = fn.result.baseType == Type tVoid
 
@@ -345,15 +349,17 @@ class QuirrelBindAnnotation : AstFunctionAnnotation
         else
             funcBody |> emplace_new <| qmacro_expr(${ return $v(voidResult && !isManualReturn ? 0l : 1l); })
 
-        var bindFn <- qmacro_function(wrapperName) <| $(var _vm_ : quirrel::SQVM?) : int64
+        var bindFn <- qmacro_function(wrapperName) <| $ [unused_argument(_vm_)] (var _vm_ : quirrel::SQVM?) : int64
             $b(funcBody)
 
-        bindFn.flags |= FunctionFlags exports | FunctionFlags privateFunction
+        bindFn.body |> force_at(fn.body.at)
+
+        bindFn.flags |= FunctionFlags exports | FunctionFlags privateFunction | FunctionFlags generated
         let moduleName = moduleArg ?as tString ?? "dasbind"
         bindFn |> append_annotation("quirrel_boost", "quirrel_wrapper", [{auto
             [[auto "name", [[RttiValue tString="{bindName}"]] ]];
             [[auto "module_name", [[RttiValue tString=moduleName ]] ]];
-            [[auto "paramsCheck", [[RttiValue tString="{join(paramsCheck, "")}"]] ]];
+            [[auto "params_check", [[RttiValue tString="{join(paramsCheck, "")}"]] ]];
             [[auto "params", [[RttiValue tInt=optionalArgsNum == 0 ? length(paramsCheck) : -length(paramsCheck)+optionalArgsNum]] ]]
         }])
         fn._module |> add_function(bindFn)
