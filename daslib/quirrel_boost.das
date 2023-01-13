@@ -15,17 +15,17 @@ require daslib/strings_boost
 require quirrel public
 
 
-def public popValue(var vm : SQVM?; idx, nargs : int64; cb : block<(res : auto(T)) : void>)
+def public getStackValue(var vm : SQVM?; idx, nargs : int64; cb : block<(res : auto(T)) : void>)
     if idx < nargs
-        return popValue(vm, idx, cb)
+        return _::getStackValue(vm, idx, cb)
     cb |> invoke(null)
     return true
 
 
-def public popValue(var vm : SQVM?; idx : int64; cb : block<(res : auto(T)?) : void>)
+def public getStackValue(var vm : SQVM?; idx : int64; cb : block<(res : auto(T)?) : void>)
     let itemType = sq_gettype(vm, idx)
     if itemType != tagSQObjectType OT_NULL
-        return popValue(vm, idx) <| $(res2 : T)
+        return _::getStackValue(vm, idx) <| $(res2 : T)
             cb |> invoke(unsafe(reinterpret<T? const> unsafe(addr(res2))))
     else
         cb |> invoke(null)
@@ -33,31 +33,31 @@ def public popValue(var vm : SQVM?; idx : int64; cb : block<(res : auto(T)?) : v
     return false
 
 
-def public popIntValue(var vm : SQVM?; idx : int64; cb : block<(res : auto(T)) : void>)
+def public getStackIntValue(var vm : SQVM?; idx : int64; cb : block<(res : auto(T)) : void>)
     var res = 0l
     if sq_getinteger(vm, idx, unsafe(addr(res))) >= 0l
         cb |> invoke(unsafe(reinterpret<T#> T(res)))
         return true
     return false
 
-def public popValue(var vm : SQVM?; idx : int64; cb : block<(res : int) : void>)
-    return popIntValue(vm, idx, cb)
-def public popValue(var vm : SQVM?; idx : int64; cb : block<(res : int8) : void>)
-    return popIntValue(vm, idx, cb)
-def public popValue(var vm : SQVM?; idx : int64; cb : block<(res : int16) : void>)
-    return popIntValue(vm, idx, cb)
-def public popValue(var vm : SQVM?; idx : int64; cb : block<(res : int64) : void>)
-    return popIntValue(vm, idx, cb)
-def public popValue(var vm : SQVM?; idx : int64; cb : block<(res : uint) : void>)
-    return popIntValue(vm, idx, cb)
-def public popValue(var vm : SQVM?; idx : int64; cb : block<(res : uint8) : void>)
-    return popIntValue(vm, idx, cb)
-def public popValue(var vm : SQVM?; idx : int64; cb : block<(res : uint16) : void>)
-    return popIntValue(vm, idx, cb)
-def public popValue(var vm : SQVM?; idx : int64; cb : block<(res : uint64) : void>)
-    return popIntValue(vm, idx, cb)
+def public getStackValue(var vm : SQVM?; idx : int64; cb : block<(res : int) : void>)
+    return getStackIntValue(vm, idx, cb)
+def public getStackValue(var vm : SQVM?; idx : int64; cb : block<(res : int8) : void>)
+    return getStackIntValue(vm, idx, cb)
+def public getStackValue(var vm : SQVM?; idx : int64; cb : block<(res : int16) : void>)
+    return getStackIntValue(vm, idx, cb)
+def public getStackValue(var vm : SQVM?; idx : int64; cb : block<(res : int64) : void>)
+    return getStackIntValue(vm, idx, cb)
+def public getStackValue(var vm : SQVM?; idx : int64; cb : block<(res : uint) : void>)
+    return getStackIntValue(vm, idx, cb)
+def public getStackValue(var vm : SQVM?; idx : int64; cb : block<(res : uint8) : void>)
+    return getStackIntValue(vm, idx, cb)
+def public getStackValue(var vm : SQVM?; idx : int64; cb : block<(res : uint16) : void>)
+    return getStackIntValue(vm, idx, cb)
+def public getStackValue(var vm : SQVM?; idx : int64; cb : block<(res : uint64) : void>)
+    return getStackIntValue(vm, idx, cb)
 
-def public popValue(var vm : SQVM?; idx : int64; cb : block<(res : bool) : void>)
+def public getStackValue(var vm : SQVM?; idx : int64; cb : block<(res : bool) : void>)
     var res = 0ul
     if sq_getbool(vm, idx, unsafe(addr(res))) >= 0l
         let resT = res != 0ul
@@ -65,14 +65,14 @@ def public popValue(var vm : SQVM?; idx : int64; cb : block<(res : bool) : void>
         return true
     return false
 
-def public popValue(var vm : SQVM?; idx : int64; cb : block<(res : float) : void>)
+def public getStackValue(var vm : SQVM?; idx : int64; cb : block<(res : float) : void>)
     var res = 0.
     if sq_getfloat(vm, idx, unsafe(addr(res))) >= 0l
         cb |> invoke(unsafe(reinterpret<float#> res))
         return true
     return false
 
-def public popValue(var vm : SQVM?; idx : int64; cb : block<(res : string) : void>)
+def public getStackValue(var vm : SQVM?; idx : int64; cb : block<(res : string) : void>)
     var res : string
     let itemType = sq_gettype(vm, idx)
     if itemType == tagSQObjectType OT_STRING
@@ -84,7 +84,7 @@ def public popValue(var vm : SQVM?; idx : int64; cb : block<(res : string) : voi
         return true
     return false
 
-def public popValue(var vm : SQVM?; idx : int64; cb : block<(res : array<auto(T)>) : void>)
+def public getStackValue(var vm : SQVM?; idx : int64; cb : block<(res : array<auto(T)>) : void>)
     var res : array<T>
     var runtimeError = false
     let len = sq_getsize(vm, idx)
@@ -92,7 +92,7 @@ def public popValue(var vm : SQVM?; idx : int64; cb : block<(res : array<auto(T)
     while !runtimeError && i < len
         sq_pushinteger(vm, i)
         sq_rawget(vm, idx)
-        if !popValue(vm, -1l, $(v : T) { res |> push(v); })
+        if !_::getStackValue(vm, -1l, $(v : T) { res |> push(v); })
             let itemType = sq_gettype(vm, -1l)
             to_log(LOG_ERROR, "Unable to read [{i}] item. Expected {typeinfo(typename type<T>)}, got {itemType}")
             runtimeError = true
@@ -105,13 +105,13 @@ def public popValue(var vm : SQVM?; idx : int64; cb : block<(res : array<auto(T)
     delete res
     return !runtimeError
 
-def public popValue(var vm : SQVM?; idx : int64; cb : block<(res : table<auto(K); auto(V)>) : void>)
+def public getStackValue(var vm : SQVM?; idx : int64; cb : block<(res : table<auto(K); auto(V)>) : void>)
     var res : table<K; V>
     var runtimeError = false
     sq_pushnull(vm)
     while !runtimeError && sq_next(vm, idx) >= 0l
-        let hasKey = popValue(vm, -2l) <| $(k : K)
-            let hasValue = popValue(vm, -1l) <| $(v : V)
+        let hasKey = _::getStackValue(vm, -2l) <| $(k : K)
+            let hasValue = _::getStackValue(vm, -1l) <| $(v : V)
                 res[k] = v // TODO: emplace/copy
             if !hasValue
                 let valueType = sq_gettype(vm, -1l)
@@ -121,6 +121,8 @@ def public popValue(var vm : SQVM?; idx : int64; cb : block<(res : table<auto(K)
             let keyType = sq_gettype(vm, -2l)
             to_log(LOG_ERROR, "Unable to read table key. Expected {typeinfo(typename type<K>)}, got {keyType}")
             runtimeError = true
+        sq_pop(vm, 2l) // pop key and value
+    sq_pop(vm, 1l) // pop iterator
 
     if !runtimeError
         cb |> invoke(res)
@@ -210,22 +212,24 @@ def read_arg(var arg : smart_ptr<ast::Variable>&; vmIdx : int64; argName : strin
             return <- funcBody
         else
             nullable_arg = true
+            if arg._type.isConst && !arg._type.isRefType && !arg._type.firstType.isConst
+                errors := "{errors}\nargument {arg.name} which is constant pointer should point to constant data\nAdd const before question mark ('int const?)"
 
-    if arg._type.baseType == Type tHandle && is_temp_type(arg._type,true) && !(arg._type.flags.temporary || arg._type.flags._implicit)
-        errors := "{errors}\nargument {arg.name} needs to be temporary or implicit)"
+    if arg._type.baseType == Type tHandle && is_temp_type(arg._type,true) && !arg._type.flags.temporary
+        errors := "{errors}\nargument {arg.name} needs to be temporary)"
         return <- funcBody
 
     var res : array<ExpressionPtr>
     if nullable_arg && optional_args
         var reader <- qmacro_block <|
-            if !(_::popValue(_vm_, $v(vmIdx), _nargs_) <| $($i(argName) : $t(arg._type)&) { $b(funcBody); })
+            if !(_::getStackValue(_vm_, $v(vmIdx), _nargs_) <| $($i(argName) : $t(arg._type)&) { $b(funcBody); })
                 let valueType = sq_gettype(_vm_, $v(vmIdx))
                 sq_throwerror(_vm_, "Unable to read argument '{$v(argName)}'. Expected '{$v(describe(arg._type))}, got {valueType}'")
                 _runtime_error_ = true
         res |> emplace(reader)
     else
         var reader <- qmacro_block <|
-            if !(_::popValue(_vm_, $v(vmIdx)) <| $($i(argName) : $t(arg._type)&) { $b(funcBody); })
+            if !(_::getStackValue(_vm_, $v(vmIdx)) <| $($i(argName) : $t(arg._type)&) { $b(funcBody); })
                 let valueType = sq_gettype(_vm_, $v(vmIdx))
                 sq_throwerror(_vm_, "Unable to read argument '{$v(argName)}'. Expected '{$v(describe(arg._type))}, got {valueType}'")
                 _runtime_error_ = true
