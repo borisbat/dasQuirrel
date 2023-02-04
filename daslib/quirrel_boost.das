@@ -36,7 +36,7 @@ def public getStackValue(var vm : SQVM?; idx : int64; cb : block<(res : auto(T)?
 def public getStackIntValue(var vm : SQVM?; idx : int64; cb : block<(res : auto(T)) : void>)
     var res = 0l
     if sq_getinteger(vm, idx, unsafe(addr(res))) >= 0l
-        cb |> invoke(unsafe(reinterpret<T#> T(res)))
+        cb |> invoke(T(res))
         return true
     return false
 
@@ -61,14 +61,14 @@ def public getStackValue(var vm : SQVM?; idx : int64; cb : block<(res : bool) : 
     var res = 0ul
     if sq_getbool(vm, idx, unsafe(addr(res))) >= 0l
         let resT = res != 0ul
-        cb |> invoke(unsafe(reinterpret<bool#> resT))
+        cb |> invoke(resT)
         return true
     return false
 
 def public getStackValue(var vm : SQVM?; idx : int64; cb : block<(res : float) : void>)
     var res = 0.
     if sq_getfloat(vm, idx, unsafe(addr(res))) >= 0l
-        cb |> invoke(unsafe(reinterpret<float#> res))
+        cb |> invoke(res)
         return true
     return false
 
@@ -215,21 +215,17 @@ def read_arg(var arg : smart_ptr<ast::Variable>&; vmIdx : int64; argName : strin
             if arg._type.isConst && !arg._type.isRefType && !arg._type.firstType.isConst
                 errors := "{errors}\nargument {arg.name} which is constant pointer should point to constant data\nAdd const before question mark ('int const?)"
 
-    if arg._type.baseType == Type tHandle && is_temp_type(arg._type,true) && !arg._type.flags.temporary
-        errors := "{errors}\nargument {arg.name} needs to be temporary)"
-        return <- funcBody
-
     var res : array<ExpressionPtr>
     if nullable_arg && optional_args
         var reader <- qmacro_block <|
-            if !(_::getStackValue(_vm_, $v(vmIdx), _nargs_) <| $($i(argName) : $t(arg._type)&) { $b(funcBody); })
+            if !(_::getStackValue(_vm_, $v(vmIdx), _nargs_) <| $($i(argName) : $t(arg._type)) { $b(funcBody); })
                 let valueType = sq_gettype(_vm_, $v(vmIdx))
                 sq_throwerror(_vm_, "Unable to read argument '{$v(argName)}'. Expected '{$v(describe(arg._type))}, got {valueType}'")
                 _runtime_error_ = true
         res |> emplace(reader)
     else
         var reader <- qmacro_block <|
-            if !(_::getStackValue(_vm_, $v(vmIdx)) <| $($i(argName) : $t(arg._type)&) { $b(funcBody); })
+            if !(_::getStackValue(_vm_, $v(vmIdx)) <| $($i(argName) : $t(arg._type)) { $b(funcBody); })
                 let valueType = sq_gettype(_vm_, $v(vmIdx))
                 sq_throwerror(_vm_, "Unable to read argument '{$v(argName)}'. Expected '{$v(describe(arg._type))}, got {valueType}'")
                 _runtime_error_ = true
