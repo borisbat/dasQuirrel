@@ -221,7 +221,7 @@ def public paramcheck(typ) {
 }
 
 [macro_function]
-def read_arg(var arg : smart_ptr<ast::Variable>&; vmIdx : int64; argName : string; optional_args: bool; var errors : das_string;
+def read_arg(var arg : smart_ptr<ast::Variable>&; vmIdx : int64; argName : string; optional_args : bool; var errors : das_string;
              var funcBody : array<ExpressionPtr>; var paramsCheck : array<string>; var nullable_arg, vm_arg : bool&) : array<ExpressionPtr> {
     nullable_arg = false
     vm_arg = false
@@ -240,7 +240,7 @@ def read_arg(var arg : smart_ptr<ast::Variable>&; vmIdx : int64; argName : strin
             if (ann.basicType != Type.tString) {
                 errors := "{errors}\nuse incorrect raw_param annotation type, string required ([[raw_param=<paramCheckName>...]] {arg.name} : int64)"
             } else {
-                var inscope expr <- qmacro_expr(${let $i(argName) = $v(vmIdx);})
+                var inscope expr <- qmacro_expr(${let $i(argName) = $v(vmIdx); })
                 funcBody |> emplace(expr, 0)
                 paramsCheck |> push("{ann.sValue}", 0)
             }
@@ -251,7 +251,7 @@ def read_arg(var arg : smart_ptr<ast::Variable>&; vmIdx : int64; argName : strin
     if (arg._type.baseType == Type.tPointer) {
         if (arg._type.firstType.annotation != null && arg._type.firstType.annotation.name == "SQVM") {
             vm_arg = true
-            var inscope expr <- qmacro_expr(${var $i(argName) = _vm_;})
+            var inscope expr <- qmacro_expr(${var $i(argName) = _vm_; })
             funcBody |> emplace(expr, 0)
             return <- funcBody
         } else {
@@ -289,7 +289,7 @@ def read_arg(var arg : smart_ptr<ast::Variable>&; vmIdx : int64; argName : strin
 
 [function_macro(name="quirrel_wrapper")]
 class QuirrelCallAnnotation : AstFunctionAnnotation {
-    def override complete ( var func:FunctionPtr; var ctx:smart_ptr<Context> ) : void {
+    def override complete(var func : FunctionPtr; var ctx : smart_ptr<Context>) : void {
         if (is_in_aot() || is_in_completion()) {
             return
         }
@@ -311,7 +311,7 @@ class QuirrelCallAnnotation : AstFunctionAnnotation {
 
 [function_macro(name="quirrel_bind")]
 class QuirrelBindAnnotation : AstFunctionAnnotation {
-    def override apply ( var func:FunctionPtr; var group:ModuleGroup; args:AnnotationArgumentList; var errors : das_string ) : bool {
+    def override apply(var func : FunctionPtr; var group : ModuleGroup; args : AnnotationArgumentList; var errors : das_string) : bool {
         if (func.isGeneric) {
             errors := "generic function. Define all arguments types"
             return false
@@ -319,7 +319,7 @@ class QuirrelBindAnnotation : AstFunctionAnnotation {
         return true
     }
 
-    def override patch ( var fn:FunctionPtr; var group:ModuleGroup; args,progArgs:AnnotationArgumentList; var errors : das_string; var astChanged:bool& ) : bool {
+    def override patch(var fn : FunctionPtr; var group : ModuleGroup; args, progArgs : AnnotationArgumentList; var errors : das_string; var astChanged : bool&) : bool {
         let bindedArg = args |> find_arg("binded")
         if (bindedArg is tBool) {// function was already binded
             return true
@@ -413,7 +413,7 @@ class QuirrelBindAnnotation : AstFunctionAnnotation {
         }
 
         for (ann in fn.annotations) {
-            if (ann.annotation.name=="quirrel_bind") {
+            if (ann.annotation.name == "quirrel_bind") {
                 astChanged = true
                 ann.arguments |> add_annotation_argument("binded", true)
             }
@@ -439,10 +439,10 @@ class QuirrelBindAnnotation : AstFunctionAnnotation {
 
         bindFn.flags |= FunctionFlags.exports | FunctionFlags.privateFunction | FunctionFlags.generated
         let moduleName = moduleArg ?as tString ?? "dasbind"
-        let name_val =  ("name", RttiValue( tString="{bindName}") )
-        let module_name_val =  ("module_name", RttiValue( tString=moduleName ) )
-        let params_check_val =  ("params_check", RttiValue( tString="{join(paramsCheck, "")}") )
-        let params_val =  ("params", RttiValue( tInt=optionalArgsNum == 0 ? length(paramsCheck) : -length(paramsCheck)+optionalArgsNum) )
+        let name_val =  ("name", RttiValue(tString = "{bindName}"))
+        let module_name_val =  ("module_name", RttiValue(tString = moduleName))
+        let params_check_val =  ("params_check", RttiValue(tString = "{join(paramsCheck, "")}"))
+        let params_val =  ("params", RttiValue(tInt = optionalArgsNum == 0 ? length(paramsCheck) : -length(paramsCheck) + optionalArgsNum))
 
         bindFn |> append_annotation("quirrel_boost", "quirrel_wrapper", [
             name_val,
